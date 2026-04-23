@@ -1,0 +1,8 @@
+USE service_request_db;
+
+ALTER TABLE roles 
+ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER description,
+ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at;
+
+SELECT 'Columns added successfully!' AS message;
+DESCRIBE roles;

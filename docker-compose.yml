@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./service-request-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Use the container name 'mysql' as the host, strict updates to JDBC URL for Docker env
+      - DB_URL=jdbc:mysql://mysql:3306/service_request_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - service-request-network
+
+  frontend:
+    build:
+      context: ./service-request-frontend
+      args:
+        # Browser accesses backend via localhost:8080 mapped from host
+        - VITE_API_BASE_URL=http://localhost:8080/api
+    ports:
+      - "5173:80"
+    networks:
+      - service-request-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=service_request_db
+    ports:
+      - "3307:3306" # Mapped to 3307 to avoid port conflict with local MySQL
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - service-request-network
+    healthcheck:
+      test: [ "CMD", "mysql", "-uroot", "-p${DB_PASSWORD}", "-e", "SELECT 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  service-request-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
